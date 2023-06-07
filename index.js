@@ -1,5 +1,5 @@
 
-const ul =document.getElementById('list');
+const userList =document.getElementById('list');
 
 const amount =document.getElementById('amount');
 
@@ -11,13 +11,28 @@ const form =document.getElementById('my-form');
 
 const error =document.getElementById('error');
 
+const axiosInstance = axios.create({
+    baseURL:'http://localhost:3000'
+})
+
 form.addEventListener('submit',trackerdetails);
 
-function trackerdetails(e){
+window.addEventListener('DOMContentLoaded',async()=>{
+
+    const getdetails= await axiosInstance.get('/getDetails');
+
+    for(let i=0;i<getdetails.data.length;i++){
+
+        showOnScreen(getdetails.data[i]);
+    }
+    
+})
+
+async function trackerdetails(e){
+    e.preventDefault();
 
     if(amount.value==='' || description.value==='' || category.value===''){
         
-        e.preventDefault();
         error.classList.add('error');
 
         error.innerHTML ="Please fill the fields";
@@ -26,72 +41,90 @@ function trackerdetails(e){
 
     }
     else{
-    e.preventDefault();
    
-    const li =document.createElement('li');
+   
+    const myobj={
+        amount:amount.value,
+        description:description.value,
+        category:category.options[category.selectedIndex].value
     
-    const edit =document.createElement('button');
+    }
+
+        console.log(myobj);
+        const obj=await axiosInstance.post('/sentDetails',myobj);
+
+        showOnScreen(obj);
+       
+
+    amount.value='';
+    description.value='';
+    category.options='';
+    }
+
+
+
+   
+
+    
+
+}
+
+
+
+function showOnScreen(myobj) {
+
+
+ 
+    console.log(myobj);
+    const li = document.createElement('li');
 
     const del = document.createElement('button');
-//  Edit button
-    // edit.classList.add('btn');
-    edit.innerHTML='EDIT';
-    
-    edit.style.margin='0px 6px';
-    edit.style.padding='0px 6px';
-//  Delete button
-    del.innerHTML ='DELETE';
-    del.style.margin='0px 6px';
-    del.style.padding='0px 6px';
 
+    //edit button
+    const edit = document.createElement('button');
+    edit.innerHTML = 'Edit';
+    edit.classList.add('Add');
+
+
+    //  Delete button
+    del.innerHTML = 'Delete Products';
+    del.classList.add('Add');
+    // del.style.margin='0px 6px';
+    // del.style.padding='0px 6px';
+
+  
     
 
-    li.appendChild(document.createTextNode(`${amount.value} : ${description.value} ,
-     ${category.options[category.selectedIndex].value}`));
+    li.appendChild(document.createTextNode(`${myobj.amount},${myobj.description},${myobj.category}`));
 
     li.appendChild(edit);
 
     li.appendChild(del);
 
-    ul.style.listStyle='none';
-    ul.appendChild(li);
-    
+    userList.style.listStyle = 'none';
+    userList.appendChild(li);
 
-    //Object creation and add to local storage
-    const myobj ={
-        Expense:amount.value,
-        description:description.value,
-        category:category.options[category.selectedIndex].value,
+
+
+    del.onclick = async () => {
+
+        await axiosInstance.post(`/deleteDetails/${myobj.id}`);
+
+        userList.removeChild(li);
     }
 
-    //delete functionality
+    edit.onclick = async()=>{
 
-    del.onclick=()=>{
-        localStorage.removeItem(myobj.description);
-        ul.removeChild(li);
-    }
+        // await axiosInstance.post(`/editDetails/${myobj.id}`);
 
-    //Edit functionality
-    edit.onclick=()=>{
+        userList.removeChild(li);
 
-        localStorage.removeItem(myobj.description);
-        ul.removeChild(li);
-
-        amount.value=myobj.Expense;
+        amount.value=myobj.amount;
         description.value=myobj.description;
-        category.options[category.selectedIndex].value=myobj.category;
+
+        category.options[category.selectedIndex].value= myobj.category;
     }
 
 
 
-    localStorage.setItem(description.value,JSON.stringify(myobj));
-
-    amount.value='';
-    description.value='';
-    category.options='';
-
 }
-
-}
-
-
